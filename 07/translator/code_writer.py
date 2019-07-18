@@ -44,17 +44,73 @@ class CodeWriter(object):
             if segment == "constant":
                 # write constant to stack
                 self._push_constant(index)
+            elif segment == "local":
+                self._push_segment_index("LCL", index, "M")
+            elif segment == "argument":
+                self._push_segment_index("ARG", index, "M")
+            elif segment == "this":
+                self._push_segment_index("THIS", index, "M")
+            elif segment == "that":
+                self._push_segment_index("THAT", index, "M")
+            elif segment == "pointer":
+                self._push_segment_index("R3", index, "A")
+            elif segment == "temp":
+                self._push_segment_index("R5", index, "A")
 
-            # increment stack pointer.
-            self._increment_SP()
+        else:
+            if segment == "local":
+                self._pop_segment_index("LCL", index, "M")
+            elif segment == "argument":
+                self._pop_segment_index("ARG", index, "M")
+            elif segment == "this":
+                self._pop_segment_index("THIS", index, "M")
+            elif segment == "that":
+                self._pop_segment_index("THAT", index, "M")
+            elif segment == "pointer":
+                self._pop_segment_index("R3", index, "A")
+            elif segment == "temp":
+                self._pop_segment_index("R5", index, "A")
 
     def _push_constant(self, index):
         """Push constant to top of stack."""
-        self.filestream.write(f"@{index}")
-        self.filestream.write("D=A")
-        self.filestream.write("@SP")
+        self._set_D_to_index(index)
+        self._push_D_to_stack()
+
+    def _push_segment_index(self, segment, index, AM):
+        """Push the value of the segment at index to top of the stack."""
+        # Load the address of segement[index]
+        self._set_D_to_index(index)
+        self.filestream.write(f"@{segment}")
+        self.filestream.write(f"A={AM}+D")
+
+        # read value of segement[index]
+        self.filestream.write("D=M")
+        self._push_D_to_stack()
+
+    def _pop_segment_index(self, segment, index, AM):
+        """Pop the top of the stack to segment[index].
+
+        AM = whether to add A or M to the index
+        """
+        # Load the address of segement[index]
+        self._set_D_to_index(index)
+        self.filestream.write(f"@{segment}")
+        self.filestream.write(f"D={AM}+D")
+
+        # Save address of segement[index]
+        self.filestream.write("@R13")
+        self.filestream.write("M=D")
+
+        # Load top of the stack to segement[index]
+        self._pop_to_D()
+        self.filestream.write("@R13")
         self.filestream.write("A=M")
         self.filestream.write("M=D")
+
+    def _set_D_to_index(self, index):
+        """Set D register to value of the index."""
+        self.filestream.write(f"@{index}")
+        self.filestream.write("D=A")
 
     def _add(self):
         """Add the top two values of the stack."""
@@ -133,6 +189,13 @@ class CodeWriter(object):
         self.filestream.write("M=!M")
         self._increment_SP()
 
+    def _push_D_to_stack(self):
+        """Push the value of the D register to top of the stack."""
+        self.filestream.write("@SP")
+        self.filestream.write("A=M")
+        self.filestream.write("M=D")
+        self._increment_SP()
+
     def _pop_to_D(self):
         """Pop the top of the stack to the D Register."""
         # Load the top most value of the stack to D
@@ -194,9 +257,9 @@ class CodeWriter(object):
     def close(self):
         """Close file."""
         # Loop at the end forever
-        counter = self.filestream.get_global_counter() + 2
-        self.filestream.write(f"@{counter}")
-        self.filestream.write("0;JMP")
+        # counter = self.filestream.get_global_counter() + 2
+        # self.filestream.write(f"@{counter}")
+        # self.filestream.write("0;JMP")
         self.filestream.close()
 
 

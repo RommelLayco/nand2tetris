@@ -28,7 +28,8 @@ def main(path):
             parser.advance()
             command_type = parser.commandType()
 
-            if command_type == CommandType.C_PUSH:
+            if (command_type == CommandType.C_PUSH or
+                    command_type == CommandType.C_POP):
                 segment = parser.arg1()
                 index = parser.arg2()
                 code_writer.writePushPop(
