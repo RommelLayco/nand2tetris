@@ -56,6 +56,8 @@ class CodeWriter(object):
                 self._push_segment_index("R3", index, "A")
             elif segment == "temp":
                 self._push_segment_index("R5", index, "A")
+            elif segment == "static":
+                self._push_segment_index("16", index, "A")
 
         else:
             if segment == "local":
@@ -70,6 +72,8 @@ class CodeWriter(object):
                 self._pop_segment_index("R3", index, "A")
             elif segment == "temp":
                 self._pop_segment_index("R5", index, "A")
+            elif segment == "static":
+                self._pop_segment_index("16", index, "A")
 
     def _push_constant(self, index):
         """Push constant to top of stack."""
@@ -257,9 +261,9 @@ class CodeWriter(object):
     def close(self):
         """Close file."""
         # Loop at the end forever
-        # counter = self.filestream.get_global_counter() + 2
-        # self.filestream.write(f"@{counter}")
-        # self.filestream.write("0;JMP")
+        counter = self.filestream.get_global_counter() + 2
+        self.filestream.write(f"@{counter}")
+        self.filestream.write("0;JMP")
         self.filestream.close()
 
 
