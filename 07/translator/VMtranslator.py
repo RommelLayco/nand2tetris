@@ -40,6 +40,15 @@ def main(path):
             elif command_type == CommandType.C_ARITHMETIC:
                 command = parser.arg1()
                 code_writer.writeArithmetic(command)
+            elif command_type == CommandType.C_LABEL:
+                label = parser.arg1()
+                code_writer.writeLabel(label)
+            elif command_type == CommandType.C_GOTO:
+                label = parser.arg1()
+                code_writer.writeGoto(label)
+            elif command_type == CommandType.C_IF:
+                label = parser.arg1()
+                code_writer.writeIf(label)
 
         code_writer.close()
 

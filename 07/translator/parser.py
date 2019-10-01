@@ -52,14 +52,26 @@ class Parser(object):
     def commandType(self):
         """Return the type of the VM command."""
         if self.command.startswith("push"):
-            type = CommandType.C_PUSH
+            c_type = CommandType.C_PUSH
         elif self.command.startswith("pop"):
-            type = CommandType.C_POP
+            c_type = CommandType.C_POP
         elif self.command in Parser.ARITHMETIC_COMMANDS:
-            type = CommandType.C_ARITHMETIC
+            c_type = CommandType.C_ARITHMETIC
+        elif self.command.startswith("label"):
+            c_type = CommandType.C_LABEL
+        elif self.command.startswith("goto"):
+            c_type = CommandType.C_GOTO
+        elif self.command.startswith("if-goto"):
+            c_type = CommandType.C_IF
+        elif self.command.startswith("function"):
+            c_type = CommandType.C_FUNCTION
+        elif self.command.startswith("call"):
+            c_type = CommandType.C_CALL
+        elif self.command.startswith("return"):
+            c_type = CommandType.C_RETURN
 
-        self.command_type = type
-        return type
+        self.command_type = c_type
+        return c_type
 
     def arg1(self):
         """Return first argument of current command."""

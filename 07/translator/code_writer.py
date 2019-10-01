@@ -10,11 +10,19 @@ class CodeWriter(object):
         """Create an instance of the code writer."""
         self.filestream = Filestream(filestream)
 
+    def writeInit(self):
+        """Write bootstrap code."""
+        self.filestream.write("@256")
+        self.filestream.write("D=A")
+        self.filestream.write("@SP")
+        self.filestream.write("M=D")
+
     def setFileName(self, filepath):
         """Close current filestream and open a new one to filepath."""
         if self.filestream is not None:
             self.filestream.close()
         self.filestream = Filestream(open(filepath, 'w'))
+        self.writeInit()
 
     def writeArithmetic(self, command):
         """Write  assembly code of arithmetic command."""
@@ -74,6 +82,22 @@ class CodeWriter(object):
                 self._pop_segment_index("R5", index, "A")
             elif segment == "static":
                 self._pop_segment_index("16", index, "A")
+
+    def writeLabel(self, label):
+        """Write label."""
+        self.filestream.write(f"({label})")
+        self.filestream.global_counter -= 1
+
+    def writeGoto(self, label):
+        """Do an unconditional jump to the given label."""
+        self.filestream.write(f"@{label}")
+        self.filestream.write("0;JMP")
+
+    def writeIf(self, label):
+        """Write conditional jump."""
+        self._pop_to_D()
+        self.filestream.write(f"@{label}")
+        self.filestream.write(f"D;JNE")
 
     def _push_constant(self, index):
         """Push constant to top of stack."""
