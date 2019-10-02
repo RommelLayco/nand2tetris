@@ -9,6 +9,7 @@ class CodeWriter(object):
     def __init__(self, filepath):
         """Create an instance of the code writer."""
         self.filestream = Filestream(open(filepath, 'w'))
+        self.label_counter = 0
 
     def writeInit(self):
         """Write bootstrap code."""
@@ -359,9 +360,8 @@ class CodeWriter(object):
 
     def _jump(self, jump_type):
         """Set jump address and write jump command."""
-        count = self.filestream.get_global_counter() + 10
-        self.filestream.write(
-            f"@{count}")  # JUMP pass the false commands
+        self.filestream.get_global_counter() + 10
+        self.filestream.write(f"@true-{self.label_counter}")
         # 7 false command plus the two commands setting up the jump
 
         self.filestream.write(f"D;{jump_type}")
@@ -370,7 +370,7 @@ class CodeWriter(object):
         self._push_true()
 
     def _push_false(self):
-        """Push false -1 to stack."""
+        """Push false 0 to stack."""
         # seven total commands
         self.filestream.write("@SP")
         self.filestream.write("A=M")
@@ -378,19 +378,27 @@ class CodeWriter(object):
         self._increment_SP()  # two commands in here
 
         # Jump pass the true block
-        count = self.filestream.get_global_counter() + 8
-        self.filestream.write(
-            f"@{count}"
-        )
+        self.filestream.get_global_counter() + 8
+  
+        self.filestream.write(f"@end-jump-{self.label_counter}")
         self.filestream.write("0;JMP")
 
     def _push_true(self):
         """Push false -1 to stack."""
+        # Label start of true block
+        self.writeLabel(f"true-{self.label_counter}")
+
         # five total commands
         self.filestream.write("@SP")
         self.filestream.write("A=M")
         self.filestream.write("M=-1")
         self._increment_SP()  # two commands here
+
+        # label end of the true block
+        self.writeLabel(f"end-jump-{self.label_counter}")
+
+        # ensure we create a new unique label in the next jump
+        self.label_counter += 1
 
     def close(self):
         """Close file."""

@@ -24,6 +24,7 @@ def main(path):
         isdir = True
     else:
         path = os.path.splitext(path)[0]
+        isdir = False
 
     # Create single code write module
     code_writer = CodeWriter(f"{path}.asm")
