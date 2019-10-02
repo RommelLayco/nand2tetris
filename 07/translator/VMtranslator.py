@@ -49,6 +49,12 @@ def main(path):
             elif command_type == CommandType.C_IF:
                 label = parser.arg1()
                 code_writer.writeIf(label)
+            elif command_type == CommandType.C_FUNCTION:
+                label = parser.arg1()
+                number_of_locals = int(parser.arg2())
+                code_writer.writeFunction(label, number_of_locals)
+            elif command_type == CommandType.C_RETURN:
+                code_writer.writeReturn()
 
         code_writer.close()
 

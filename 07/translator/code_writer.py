@@ -99,6 +99,75 @@ class CodeWriter(object):
         self.filestream.write(f"@{label}")
         self.filestream.write(f"D;JNE")
 
+    def writeFunction(self, label, number_of_locals):
+        """Declare a label and initliaze locals to zero."""
+        self.filestream.write(f"({label})")
+        self.filestream.global_counter -= 1
+
+        # Initialze locals to error
+
+        # get index of local and add to base
+        for index in range(0, number_of_locals):
+            self._set_D_to_index(index)
+            self.filestream.write("@LCL")
+            self.filestream.write("D=M+D")
+            self.filestream.write("A=D")
+            self.filestream.write("M=0")
+    
+    def writeReturn(self):
+        """Return the calling function."""
+        # local is the address imediately after the saved state. 
+        self.filestream.write("@LCL")
+        self.filestream.write("D=M")
+        self.filestream.write("@FRAME")
+        self.filestream.write("M=D")
+        
+        # Relocate the top of the stack to current arg
+        self._pop_to_D()
+        self.filestream.write("@ARG")
+        self.filestream.write("A=M")
+        self.filestream.write("M=D")
+
+        # Set stack pointer to arg plus 1
+        self.filestream.write("@ARG")
+        self.filestream.write("D=M+1")
+        self.filestream.write("@SP")
+        self.filestream.write("M=D")
+
+        # Repoistion segements
+        self._reposition_segments("THAT")
+        self._reposition_segments("THIS")
+        self._reposition_segments("ARG")
+        self._reposition_segments("LCL")
+
+        # go to return address
+        self._set_D_to_index(5)
+        self.filestream.write("@FRAME")
+        self.filestream.write("D=M-D")
+        self.filestream.write("A=D")
+        self.filestream.write("0;JMP")
+
+    def _reposition_segments(self, segment):
+        """Reposition a segement when returning from a function."""
+        positions_from_frame = {
+            "THAT": 1,
+            "THIS": 2,
+            "ARG": 3,
+            "LCL": 4
+        }
+
+        position = positions_from_frame[segment]
+        self._set_D_to_index(position)
+        self.filestream.write("@FRAME")
+        # Get Address of saved segement
+        self.filestream.write("D=M-D")
+        # store the saved segement value in D
+        self.filestream.write("A=D")
+        self.filestream.write("D=M")
+
+        self.filestream.write(f"@{segment}")
+        self.filestream.write("M=D")
+
     def _push_constant(self, index):
         """Push constant to top of stack."""
         self._set_D_to_index(index)
