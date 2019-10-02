@@ -21,11 +21,15 @@ def main(path):
         dirname = os.path.dirname(path)
         name = os.path.basename(dirname)
         path = f"{dirname}/{name}"
+        isdir = True
     else:
         path = os.path.splitext(path)[0]
 
     # Create single code write module
     code_writer = CodeWriter(f"{path}.asm")
+
+    if isdir:
+        code_writer.writeInit()
 
     for vm_file_path in vm_files_paths:
         filestream = open(vm_file_path, "r")
@@ -66,6 +70,10 @@ def main(path):
                 code_writer.writeFunction(label, number_of_locals)
             elif command_type == CommandType.C_RETURN:
                 code_writer.writeReturn()
+            elif command_type == CommandType.C_CALL:
+                functioname = parser.arg1()
+                number_of_args = int(parser.arg2())
+                code_writer.writeCall(functioname, number_of_args)
 
         print(code_writer.filestream.get_global_counter())
     code_writer.close()

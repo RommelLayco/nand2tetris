@@ -16,6 +16,7 @@ class CodeWriter(object):
         self.filestream.write("D=A")
         self.filestream.write("@SP")
         self.filestream.write("M=D")
+        self.writeCall("Sys.init", 0)
 
     def setFileName(self, filename):
         """Close current filestream and open a new one to filepath."""
@@ -96,9 +97,46 @@ class CodeWriter(object):
         self.filestream.write(f"@{label}")
         self.filestream.write(f"D;JNE")
 
+    def writeCall(self, functioname, number_of_args):
+        """Save state of stack and set up args."""
+        # Push return address to stack
+        self._save_segement_address(f"{functioname}.return", "A")
+        self._save_segement_address("LCL", "M")
+        self._save_segement_address("ARG", "M")
+        self._save_segement_address("THIS", "M")
+        self._save_segement_address("THAT", "M")
+
+        # Reposition ARG
+        # Set ARG to SP - n -5
+        self.filestream.write("@SP")
+        self.filestream.write("D=M")
+        self.filestream.write("@ARG")
+        self.filestream.write("M=D")
+        # less n arg positions
+        self._set_D_to_index(number_of_args)
+        self.filestream.write("@ARG")
+        self.filestream.write("M=M-D")
+        # less saved segments
+        self._set_D_to_index(5)
+        self.filestream.write("@ARG")
+        self.filestream.write("M=M-D")
+
+        # Set local to SP
+        self.filestream.write("@SP")
+        self.filestream.write("D=M")
+        self.filestream.write("@LCL")
+        self.filestream.write("M=D")
+
+        # go to function
+        self.filestream.write(f"@{functioname}")
+        self.filestream.write("0;JMP")
+
+        # Create label for return address
+        self.filestream.write(f"({functioname}.return)")
+
     def writeFunction(self, label, number_of_locals):
         """Declare a label and initliaze locals to zero."""
-        self.filestream.write(f"({self.filename}${label})")
+        self.filestream.write(f"({label})")
         self.filestream.global_counter -= 1
 
         # Initialze locals to error
@@ -110,15 +148,15 @@ class CodeWriter(object):
             self.filestream.write("D=M+D")
             self.filestream.write("A=D")
             self.filestream.write("M=0")
-    
+
     def writeReturn(self):
         """Return the calling function."""
-        # local is the address imediately after the saved state. 
+        # local is the address imediately after the saved state.
         self.filestream.write("@LCL")
         self.filestream.write("D=M")
         self.filestream.write("@FRAME")
         self.filestream.write("M=D")
-        
+
         # Relocate the top of the stack to current arg
         self._pop_to_D()
         self.filestream.write("@ARG")
@@ -143,6 +181,12 @@ class CodeWriter(object):
         self.filestream.write("D=M-D")
         self.filestream.write("A=D")
         self.filestream.write("0;JMP")
+
+    def _save_segement_address(self, segement, AM):
+        """Save the current segementa address to the top of the stack."""
+        self.filestream.write(f"@{segement}")
+        self.filestream.write(f"D={AM}")
+        self._push_D_to_stack()
 
     def _reposition_segments(self, segment):
         """Reposition a segement when returning from a function."""
