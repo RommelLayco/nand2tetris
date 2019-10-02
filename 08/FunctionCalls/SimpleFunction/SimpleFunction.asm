@@ -1,7 +1,3 @@
-@256
-D=A
-@SP
-M=D
 (SimpleFunction.test)
 @0
 D=A
@@ -152,5 +148,5 @@ D=A
 D=M-D
 A=D
 0;JMP
-@154
+@150
 0;JMP

@@ -10,6 +10,7 @@ class CodeWriter(object):
         """Create an instance of the code writer."""
         self.filestream = Filestream(open(filepath, 'w'))
         self.label_counter = 0
+        self.return_label_counter = 0
 
     def writeInit(self):
         """Write bootstrap code."""
@@ -101,7 +102,9 @@ class CodeWriter(object):
     def writeCall(self, functioname, number_of_args):
         """Save state of stack and set up args."""
         # Push return address to stack
-        self._save_segement_address(f"{functioname}.return", "A")
+        self._save_segement_address(
+            f"{functioname}.return.{self.return_label_counter}", "A"
+        )
         self._save_segement_address("LCL", "M")
         self._save_segement_address("ARG", "M")
         self._save_segement_address("THIS", "M")
@@ -133,7 +136,10 @@ class CodeWriter(object):
         self.filestream.write("0;JMP")
 
         # Create label for return address
-        self.filestream.write(f"({functioname}.return)")
+        self.filestream.write(
+            f"({functioname}.return.{self.return_label_counter})"
+        )
+        self.return_label_counter += 1
 
     def writeFunction(self, label, number_of_locals):
         """Declare a label and initliaze locals to zero."""
@@ -180,7 +186,9 @@ class CodeWriter(object):
         self._set_D_to_index(5)
         self.filestream.write("@FRAME")
         self.filestream.write("D=M-D")
+        # Set A to value stored in FRAME - 5
         self.filestream.write("A=D")
+        self.filestream.write("A=M")
         self.filestream.write("0;JMP")
 
     def _save_segement_address(self, segement, AM):
