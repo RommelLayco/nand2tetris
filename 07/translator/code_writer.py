@@ -6,9 +6,9 @@ from parser import CommandType
 class CodeWriter(object):
     """Translate VM Commands into hack assembly."""
 
-    def __init__(self, filestream):
+    def __init__(self, filepath):
         """Create an instance of the code writer."""
-        self.filestream = Filestream(filestream)
+        self.filestream = Filestream(open(filepath, 'w'))
 
     def writeInit(self):
         """Write bootstrap code."""
@@ -17,12 +17,9 @@ class CodeWriter(object):
         self.filestream.write("@SP")
         self.filestream.write("M=D")
 
-    def setFileName(self, filepath):
+    def setFileName(self, filename):
         """Close current filestream and open a new one to filepath."""
-        if self.filestream is not None:
-            self.filestream.close()
-        self.filestream = Filestream(open(filepath, 'w'))
-        self.writeInit()
+        self.filename = filename
 
     def writeArithmetic(self, command):
         """Write  assembly code of arithmetic command."""
@@ -101,7 +98,7 @@ class CodeWriter(object):
 
     def writeFunction(self, label, number_of_locals):
         """Declare a label and initliaze locals to zero."""
-        self.filestream.write(f"({label})")
+        self.filestream.write(f"({self.filename}${label})")
         self.filestream.global_counter -= 1
 
         # Initialze locals to error

@@ -13,8 +13,19 @@ def main(path):
     """Entry point for the vm translator."""
     vm_files_paths = get_vm_files(path)
 
+    if not os.path.exists(path):
+        print("invalid file path")
+        sys.exit(1)
+
+    if os.path.isdir(path):
+        dirname = os.path.dirname(path)
+        name = os.path.basename(dirname)
+        path = f"{dirname}/{name}"
+    else:
+        path = os.path.splitext(path)[0]
+
     # Create single code write module
-    code_writer = CodeWriter(None)
+    code_writer = CodeWriter(f"{path}.asm")
 
     for vm_file_path in vm_files_paths:
         filestream = open(vm_file_path, "r")
@@ -22,7 +33,7 @@ def main(path):
         filestream.close()
 
         # write to assembly file
-        code_writer.setFileName(os.path.splitext(vm_file_path)[0] + ".asm")
+        code_writer.setFileName(os.path.basename(vm_file_path))
 
         while parser.hasMoreCommands():
             parser.advance()
@@ -56,9 +67,8 @@ def main(path):
             elif command_type == CommandType.C_RETURN:
                 code_writer.writeReturn()
 
-        code_writer.close()
-
         print(code_writer.filestream.get_global_counter())
+    code_writer.close()
 
 
 def get_vm_files(path):

@@ -31,7 +31,7 @@ class Parser(object):
 
         # remove any inline comments
         self.commands = list(map(
-            lambda x: x.split("//")[0], commands
+            lambda x: x.split("//")[0].strip(), commands
         ))
 
         self.current_index = -1
