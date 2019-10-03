@@ -65,7 +65,7 @@ class CodeWriter(object):
             elif segment == "temp":
                 self._push_segment_index("R5", index, "A")
             elif segment == "static":
-                self._push_segment_index("16", index, "A")
+                self._push_static(index)
 
         else:
             if segment == "local":
@@ -81,7 +81,7 @@ class CodeWriter(object):
             elif segment == "temp":
                 self._pop_segment_index("R5", index, "A")
             elif segment == "static":
-                self._pop_segment_index("16", index, "A")
+                self._pop_static(index)
 
     def writeLabel(self, label):
         """Write label."""
@@ -164,6 +164,14 @@ class CodeWriter(object):
         self.filestream.write("@FRAME")
         self.filestream.write("M=D")
 
+        # Save Return Address
+        self._set_D_to_index(5)
+        self.filestream.write("@FRAME")
+        self.filestream.write("A=M-D")
+        self.filestream.write("D=M")
+        self.filestream.write("@RETURN_ADDRESS")
+        self.filestream.write("M=D")
+
         # Relocate the top of the stack to current arg
         self._pop_to_D()
         self.filestream.write("@ARG")
@@ -182,12 +190,7 @@ class CodeWriter(object):
         self._reposition_segments("ARG")
         self._reposition_segments("LCL")
 
-        # go to return address
-        self._set_D_to_index(5)
-        self.filestream.write("@FRAME")
-        self.filestream.write("D=M-D")
-        # Set A to value stored in FRAME - 5
-        self.filestream.write("A=D")
+        self.filestream.write("@RETURN_ADDRESS")
         self.filestream.write("A=M")
         self.filestream.write("0;JMP")
 
@@ -234,6 +237,13 @@ class CodeWriter(object):
         self.filestream.write("D=M")
         self._push_D_to_stack()
 
+    def _push_static(self, index):
+        """Push the value in the given symbol to the stack."""
+        symbol = f"{self.filename}.{index}"
+        self.filestream.write(f"@{symbol}")
+        self.filestream.write("D=M")
+        self._push_D_to_stack()
+
     def _pop_segment_index(self, segment, index, AM):
         """Pop the top of the stack to segment[index].
 
@@ -252,6 +262,14 @@ class CodeWriter(object):
         self._pop_to_D()
         self.filestream.write("@R13")
         self.filestream.write("A=M")
+        self.filestream.write("M=D")
+
+    def _pop_static(self, index):
+        """Pop the top of the stack to a static symbol."""
+        symbol = f"{self.filename}.{index}"
+
+        self._pop_to_D()
+        self.filestream.write(f"@{symbol}")
         self.filestream.write("M=D")
 
     def _set_D_to_index(self, index):
@@ -387,7 +405,7 @@ class CodeWriter(object):
 
         # Jump pass the true block
         self.filestream.get_global_counter() + 8
-  
+
         self.filestream.write(f"@end-jump-{self.label_counter}")
         self.filestream.write("0;JMP")
 
